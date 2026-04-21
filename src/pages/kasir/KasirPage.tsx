@@ -70,16 +70,19 @@ export default function KasirPage() {
       if (error) throw error;
       setTransactions(data || []);
       
-      // Update global counts for limit protection based on user's transactions
-      const regCount = (data || [])
-        .filter(tx => tx.promo_type === 'regular')
-        .length;
-      const loyCount = (data || [])
-        .filter(tx => tx.promo_type === 'loyalty_7mei')
-        .length;
+      // Fetch global counts for limit protection
+      const { count: regCountResult } = await supabase
+        .from('transactions')
+        .select('*', { count: 'exact', head: true })
+        .or('promo_type.eq.regular,promo_type.is.null');
+      
+      const { count: loyCountResult } = await supabase
+        .from('transactions')
+        .select('*', { count: 'exact', head: true })
+        .eq('promo_type', 'loyalty_7mei');
         
-      useAppStore.getState().setTransactionCount(regCount);
-      useAppStore.getState().setLoyaltyCount(loyCount);
+      useAppStore.getState().setTransactionCount(regCountResult || 0);
+      useAppStore.getState().setLoyaltyCount(loyCountResult || 0);
     } catch (e) {
       console.error('Error fetching transactions:', e);
     }
