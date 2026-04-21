@@ -47,6 +47,18 @@ export default function KasirPage() {
     if (getDailyReminder()) {
       setShowReminder(true);
     }
+
+    // Listen for new transactions from other cashiers to update limits in real-time
+    const channel = supabase
+      .channel('public:transactions:kasir')
+      .on('postgres', { event: 'INSERT', schema: 'public', table: 'transactions' }, () => {
+        fetchTransactions();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user?.outlet_id]);
 
   useEffect(() => {
