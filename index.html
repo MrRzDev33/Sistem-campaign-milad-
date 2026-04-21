@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#f97316" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Sistem reimbursement - Milad</title>
+    <script>
+      // AGGRESSIVE SELF-HEALING & SW CLEANUP (V3)
+      (function() {
+        // Force cleanup via URL parameter if needed
+        if (window.location.search.includes('reset=true')) {
+          localStorage.clear();
+          sessionStorage.clear();
+          console.log('Manual reset triggered via URL');
+        }
+
+        // 1. Unregister ALL service workers immediately
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for (let registration of registrations) {
+              registration.unregister();
+            }
+          });
+        }
+
+        // 2. Monitoring Boot Process
+        window.addEventListener('load', function() {
+          const root = document.getElementById('root');
+          setTimeout(function() {
+            if (!root || root.innerHTML.trim() === '') {
+              // Only clear if we haven't tried recovering in this session
+              if (!sessionStorage.getItem('dmc_recovered_v4')) {
+                sessionStorage.setItem('dmc_recovered_v4', 'true');
+                localStorage.clear();
+                
+                // Clear Caches
+                if ('caches' in window) {
+                  caches.keys().then(function(names) {
+                    for (let name of names) caches.delete(name);
+                  });
+                }
+                
+                // Hard reload to bypass Vercel/Browser edge caching
+                window.location.href = window.location.origin + '/?t=' + Date.now();
+              }
+            }
+          }, 3000);
+        });
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

@@ -1,0 +1,21 @@
+{
+  "name": "Sistem Reimbursement",
+  "short_name": "Milad POS",
+  "description": "Aplikasi Pencatatan Penjualan Milad Campaign",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/dmc/192/192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://picsum.photos/seed/dmc/512/512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
