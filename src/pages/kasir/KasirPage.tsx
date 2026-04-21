@@ -261,7 +261,10 @@ export default function KasirPage() {
     setIsSubmitting(true);
     
     try {
-      const hasLoyalty = items.some(item => item.id === LOYALTY_ID);
+      const hasLoyalty = items.some(item => {
+        const p = products.find(prod => prod.id === item.id);
+        return p?.is_loyalty;
+      });
 
       // Validasi & Refresh Sesi jika perlu
       let currentUser = user;
@@ -355,7 +358,7 @@ export default function KasirPage() {
     p.nama.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const loyaltyProduct = products.find(p => p.is_loyalty || p.id === LOYALTY_ID);
+  const loyaltyProduct = products.find(p => p.is_loyalty);
 
   const handleOpenQtyModal = (product: Product) => {
     setSelectedProductForQty(product);
@@ -428,7 +431,7 @@ export default function KasirPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredProducts.map((product) => {
-              const isLoyalty = product.is_loyalty || product.id === LOYALTY_ID;
+              const isLoyalty = product.is_loyalty;
               
               return (
                 <button

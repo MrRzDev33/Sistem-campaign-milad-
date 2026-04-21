@@ -24,6 +24,7 @@ export default function ProductManagement() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [selectedOutlets, setSelectedOutlets] = useState<string[]>([]);
   const [outletPrices, setOutletPrices] = useState<Record<string, string>>({});
+  const [isLoyalty, setIsLoyalty] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -78,12 +79,14 @@ export default function ProductManagement() {
       
       setSelectedOutlets(assignedOutletIds);
       setOutletPrices(pricesMap);
+      setIsLoyalty(product.is_loyalty || false);
     } else {
       setEditingProduct(null);
       setNama('');
       setHarga('');
       setSelectedOutlets([]);
       setOutletPrices({});
+      setIsLoyalty(false);
     }
     setImageFile(null);
     setIsModalOpen(true);
@@ -162,6 +165,7 @@ export default function ProductManagement() {
         nama,
         harga_default: parseInt(harga),
         gambar_url: imageUrl,
+        is_loyalty: isLoyalty,
       };
 
       let productId = editingProduct?.id;
@@ -419,6 +423,21 @@ export default function ProductManagement() {
                         />
                       </label>
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-2xl cursor-pointer bg-gray-50 hover:bg-orange-50 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={isLoyalty}
+                        onChange={(e) => setIsLoyalty(e.target.checked)}
+                        className="w-5 h-5 rounded-lg text-orange-500 focus:ring-orange-500"
+                      />
+                      <div>
+                        <p className="font-bold text-gray-900">Produk Promo Milad</p>
+                        <p className="text-xs text-gray-500">Kuota dibatasi 100 secara global</p>
+                      </div>
+                    </label>
                   </div>
                 </div>
 
