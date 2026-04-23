@@ -116,6 +116,23 @@ export default function ProductManagement() {
     }));
   };
 
+  const toggleSelectAllOutlets = () => {
+    if (selectedOutlets.length === outlets.length) {
+      setSelectedOutlets([]);
+    } else {
+      const allIds = outlets.map(o => o.id);
+      setSelectedOutlets(allIds);
+      
+      const newPrices = { ...outletPrices };
+      allIds.forEach(id => {
+        if (!newPrices[id]) {
+          newPrices[id] = harga;
+        }
+      });
+      setOutletPrices(newPrices);
+    }
+  };
+
   const uploadImage = async (file: File) => {
     // Compression options
     const options = {
@@ -442,7 +459,16 @@ export default function ProductManagement() {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-sm font-semibold text-gray-700 block">Ketersediaan & Harga per Outlet</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-semibold text-gray-700 block">Ketersediaan & Harga per Outlet</label>
+                    <button 
+                      type="button"
+                      onClick={toggleSelectAllOutlets}
+                      className="text-[10px] font-bold text-orange-600 hover:text-orange-700 uppercase tracking-wider bg-orange-50 px-3 py-1 rounded-full transition-colors"
+                    >
+                      {selectedOutlets.length === outlets.length ? 'Hapus Semua Ceklis' : 'Ceklis Semua'}
+                    </button>
+                  </div>
                   <div className="bg-gray-50 border border-gray-100 rounded-3xl p-4 max-h-[350px] overflow-y-auto space-y-3">
                     {outlets.map(outlet => {
                       const isSelected = selectedOutlets.includes(outlet.id);
