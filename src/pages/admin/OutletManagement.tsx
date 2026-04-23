@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Outlet, User } from '../../types';
 import { toast } from 'sonner';
-import { Plus, Store, UserPlus, Trash2, MapPin, Phone, Loader2, X, Save, Edit2 } from 'lucide-react';
+import { Plus, Store, UserPlus, Trash2, MapPin, Phone, Loader2, X, Save, Edit2, Search } from 'lucide-react';
 
 import { useDemoStore } from '../../store';
 
