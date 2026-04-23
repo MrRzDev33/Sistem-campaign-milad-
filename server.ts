@@ -26,10 +26,9 @@ const supabaseAdmin = (supabaseUrl && supabaseServiceKey)
   })
   : null;
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+export const app = express();
 
+async function setupApp() {
   app.use(express.json());
 
   // Log all requests
@@ -63,7 +62,6 @@ async function startServer() {
       const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
       if (error) {
         console.error("Auth Admin Delete Error:", error);
-        // If user is already gone, consider it a success
         if (error.message.includes("User not found") || error.status === 404) {
           return res.json({ success: true, message: "User already deleted or not found in Auth" });
         }
@@ -127,8 +125,8 @@ async function startServer() {
     res.status(405).json({ error: `Method ${req.method} not allowed for ${req.url}` });
   });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  // Static files or Vite middleware
+  if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -141,10 +139,19 @@ async function startServer() {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
 }
 
+async function startServer() {
+  await setupApp();
+  const PORT = process.env.PORT || 3000;
+  
+  if (!process.env.VERCEL) {
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
+}
+
+// In development/local, we start the server immediately.
+// In Vercel, the entry point will handle the request.
 startServer();
