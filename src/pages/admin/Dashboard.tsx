@@ -27,7 +27,8 @@ export default function Dashboard() {
   const [selectedProvince, setSelectedProvince] = useState<string>('');
   const [selectedOutletId, setSelectedOutletId] = useState<string>('');
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-  const [resetStep, setResetStep] = useState(0); // 0: Idle, 1: First confirm, 2: Final confirm, 3: Processing
+  const [resetStep, setResetStep] = useState(0); 
+  const [resetType, setResetType] = useState<'transactions' | 'all'>('transactions');
   
   useEffect(() => {
     fetchData();
@@ -103,34 +104,38 @@ export default function Dashboard() {
       const { error: err2 } = await supabase.from('transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (err2) throw new Error(`Gagal hapus transaksi: ${err2.message}`);
 
-      // 3. Delete Product Prices
-      const { error: err3 } = await supabase.from('product_prices').delete().neq('product_id', '00000000-0000-0000-0000-000000000000');
-      if (err3) throw new Error(`Gagal hapus harga produk: ${err3.message}`);
+      if (resetType === 'all') {
+        // 3. Delete Product Prices
+        const { error: err3 } = await supabase.from('product_prices').delete().neq('product_id', '00000000-0000-0000-0000-000000000000');
+        if (err3) throw new Error(`Gagal hapus harga produk: ${err3.message}`);
 
-      // 4. Delete Products
-      const { error: err4 } = await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      if (err4) throw new Error(`Gagal hapus produk: ${err4.message}`);
-      
-      // 5. Delete Users (Kasir only) from Auth and Database
-      const { data: kasirsToDelete } = await supabase.from('users').select('id').eq('role', 'kasir');
-      if (kasirsToDelete && kasirsToDelete.length > 0) {
-        for (const kasir of kasirsToDelete) {
-          await fetch('/api/admin/delete-user', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: kasir.id })
-          });
+        // 4. Delete Products
+        const { error: err4 } = await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        if (err4) throw new Error(`Gagal hapus produk: ${err4.message}`);
+        
+        // 5. Delete Users (Kasir only) from Auth and Database
+        const { data: kasirsToDelete } = await supabase.from('users').select('id').eq('role', 'kasir');
+        if (kasirsToDelete && kasirsToDelete.length > 0) {
+          for (const kasir of kasirsToDelete) {
+            await fetch('/api/admin/delete-user', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: kasir.id })
+            });
+          }
         }
+
+        const { error: err5 } = await supabase.from('users').delete().eq('role', 'kasir');
+        if (err5) throw new Error(`Gagal hapus akun kasir: ${err5.message}`);
+        
+        // 6. Delete Outlets
+        const { error: err6 } = await supabase.from('outlets').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        if (err6) throw new Error(`Gagal hapus outlet: ${err6.message}`);
+
+        toast.success('Seluruh data (transaksi, produk, outlet, dan akun) berhasil direset.');
+      } else {
+        toast.success('Data transaksi berhasil direset. Akun, produk, dan outlet tetap aman.');
       }
-
-      const { error: err5 } = await supabase.from('users').delete().eq('role', 'kasir');
-      if (err5) throw new Error(`Gagal hapus akun kasir: ${err5.message}`);
-      
-      // 6. Delete Outlets
-      const { error: err6 } = await supabase.from('outlets').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      if (err6) throw new Error(`Gagal hapus outlet: ${err6.message}`);
-
-      toast.success('Semua data berhasil direset. Silakan mulai dari awal.');
       setTransactionCount(0);
       setLoyaltyCount(0);
       setIsResetModalOpen(false);
@@ -275,13 +280,14 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => {
+              setResetType('transactions');
               setIsResetModalOpen(true);
               setResetStep(1);
             }}
             className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-all flex items-center gap-2 border border-red-100"
           >
             <Trash2 className="w-4 h-4" />
-            Reset Semua Data
+            Reset Data
           </button>
 
           <div className="bg-white p-1 rounded-2xl border border-gray-100 shadow-sm flex">
@@ -574,25 +580,43 @@ export default function Dashboard() {
             </div>
             
             <h3 className="text-2xl font-black text-center mb-4">
-              {resetStep === 1 ? 'Hapus Semua Data?' : resetStep === 2 ? 'Konfirmasi Terakhir' : 'Sedang Mereset...'}
+              {resetStep === 1 ? (resetType === 'all' ? 'Reset Keseluruhan?' : 'Reset Data Penjualan?') : resetStep === 2 ? 'Konfirmasi Terakhir' : 'Sedang Mereset...'}
             </h3>
             
             <p className="text-gray-500 text-center mb-10 leading-relaxed">
               {resetStep === 1 
-                ? 'Tindakan ini akan menghapus seluruh data transaksi, produk, outlet, dan akun kasir secara permanen.' 
+                ? (resetType === 'all' 
+                    ? 'Tindakan ini akan menghapus SELURUH data: transaksi, produk, outlet, dan akun kasir secara permanen.' 
+                    : 'Tindakan ini akan menghapus seluruh riwayat transaksi dan grafik laporan. Akun kasir, data produk, dan outlet akan TETAP AMAN.')
                 : resetStep === 2 
-                ? 'Apakah Anda benar-benar yakin? Data yang sudah dihapus tidak dapat dikembalikan lagi.' 
-                : 'Mohon tunggu, sistem sedang membersihkan database...'}
+                ? 'Apakah Anda benar-benar yakin? Data yang sudah dihapus tidak dapat dikembalikan.' 
+                : 'Mohon tunggu, sistem sedang membersihkan data...'}
             </p>
 
             <div className="flex flex-col gap-4">
               {resetStep === 1 && (
                 <>
+                  {resetType === 'transactions' ? (
+                    <button
+                      onClick={() => setResetType('all')}
+                      className="w-full py-4 bg-gray-50 text-gray-500 rounded-2xl font-bold hover:bg-red-50 hover:text-red-600 transition-all text-xs"
+                    >
+                      Beralih ke Reset Keseluruhan?
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setResetType('transactions')}
+                      className="w-full py-4 bg-gray-50 text-gray-500 rounded-2xl font-bold hover:bg-blue-50 hover:text-blue-600 transition-all text-xs"
+                    >
+                      Beralih ke Reset Transaksi Saja?
+                    </button>
+                  )}
+                  
                   <button
                     onClick={() => setResetStep(2)}
                     className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold shadow-xl shadow-red-100 transition-all active:scale-95"
                   >
-                    Ya, Lanjutkan
+                    LANJUTKAN
                   </button>
                   <button
                     onClick={() => setIsResetModalOpen(false)}
@@ -609,7 +633,7 @@ export default function Dashboard() {
                     onClick={handleResetData}
                     className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold shadow-xl shadow-red-100 transition-all active:scale-95"
                   >
-                    SAYA YAKIN, HAPUS SEMUA
+                    YA, RESET {resetType === 'all' ? 'SEMUA DATA' : 'TRANSAKSI'}
                   </button>
                   <button
                     onClick={() => setResetStep(1)}
