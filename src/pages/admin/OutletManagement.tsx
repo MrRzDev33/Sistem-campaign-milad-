@@ -17,6 +17,8 @@ export default function OutletManagement() {
   const [isOutletModalOpen, setIsOutletModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingKasir, setEditingKasir] = useState<User | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   // Form state
   const [namaOutlet, setNamaOutlet] = useState('');
@@ -286,7 +288,6 @@ export default function OutletManagement() {
   };
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   const handleDeleteOutlet = async (id: string) => {
     setItemToDelete(id);
@@ -355,15 +356,31 @@ export default function OutletManagement() {
 
       <div className="grid grid-cols-1 gap-8">
         <section className="space-y-6">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <Store className="w-6 h-6 text-orange-500" />
-            Daftar Outlet Aktif
-          </h3>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <Store className="w-6 h-6 text-orange-500" />
+              Daftar Outlet Aktif
+            </h3>
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cari outlet..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none shadow-sm"
+              />
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {loading ? (
               [1,2,3].map(i => <div key={i} className="h-32 bg-gray-100 animate-pulse rounded-3xl"></div>)
-            ) : outlets.map((outlet) => {
+            ) : outlets.filter(o => 
+                o.nama_outlet.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                o.provinsi.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                o.alamat.toLowerCase().includes(searchQuery.toLowerCase())
+              ).map((outlet) => {
               const kasir = kasirs.find(k => k.outlet_id === outlet.id);
               return (
                 <div key={outlet.id} className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 flex flex-col justify-between group hover:border-orange-200 transition-all">

@@ -440,26 +440,26 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Special Promo Analytics Section */}
-      <div className="bg-blue-50/50 p-8 md:p-12 rounded-[48px] border border-blue-100">
+      {/* Unified Demographics Section */}
+      <div className="bg-gray-50/50 p-8 md:p-12 rounded-[48px] border border-gray-100">
         <div className="flex items-center gap-4 mb-10">
           <div className="w-16 h-16 bg-blue-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-blue-100">
-            <Trophy className="w-8 h-8" />
+            <Users className="w-8 h-8" />
           </div>
           <div>
-            <h3 className="text-3xl font-black text-blue-900 tracking-tight">Analisis Khusus Promo Milad</h3>
-            <p className="text-blue-600/70 font-bold">Mengenal lebih dalam siapa pengguna promo Anda.</p>
+            <h3 className="text-3xl font-black text-gray-900 tracking-tight">Demografi Pelanggan</h3>
+            <p className="text-gray-500 font-bold">Mengenal lebih dalam siapa target pasar Anda secara keseluruhan.</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white p-8 rounded-[32px] shadow-sm border border-blue-50">
+          <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
             <h4 className="text-lg font-black text-gray-800 mb-6 flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-500" /> Gender (Khusus Promo)
+              <Users className="w-5 h-5 text-blue-500" /> Berdasarkan Gender
             </h4>
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.promoGenderData} layout="vertical">
+                <BarChart data={stats.genderData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
                   <XAxis type="number" hide />
                   <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 'bold' }} />
@@ -473,13 +473,13 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-[32px] shadow-sm border border-blue-50">
+          <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
             <h4 className="text-lg font-black text-gray-800 mb-6 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-500" /> Kelompok Umur (Khusus Promo)
+              <TrendingUp className="w-5 h-5 text-blue-500" /> Berdasarkan Kelompok Umur
             </h4>
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.promoAgeData}>
+                <BarChart data={stats.ageData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 10, fontWeight: 'bold' }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 10 }} />

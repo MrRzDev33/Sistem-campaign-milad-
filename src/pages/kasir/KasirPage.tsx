@@ -384,9 +384,9 @@ export default function KasirPage() {
             className="h-8 w-auto" 
           />
           <div className="hidden md:block h-6 w-px bg-gray-200"></div>
-          <div className="hidden md:block">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Kasir Outlet</p>
-            <p className="text-sm font-black text-gray-900">{user?.outlet?.nama_outlet || 'Outlet DMC'}</p>
+          <div className="block">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Kasir Outlet</p>
+            <p className="text-sm font-black text-gray-900 leading-none">{user?.outlet?.nama_outlet || 'Outlet DMC'}</p>
           </div>
         </div>
 
