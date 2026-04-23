@@ -17,13 +17,13 @@ if (!supabaseUrl || !supabaseServiceKey) {
   console.warn("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing. Admin features will not work.");
 }
 
-const supabaseAdmin = (supabaseUrl && supabaseServiceKey) 
+const supabaseAdmin = (supabaseUrl && supabaseServiceKey)
   ? createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
   : null;
 
 async function startServer() {
@@ -34,7 +34,9 @@ async function startServer() {
 
   // API: Delete User from Supabase Auth
   app.post("/api/admin/delete-user", async (req, res) => {
+    console.log("POST /api/admin/delete-user", req.body);
     if (!supabaseAdmin) {
+      console.error("Supabase Admin SDK not configured");
       return res.status(500).json({ error: "Supabase Admin SDK not configured" });
     }
 
@@ -46,22 +48,26 @@ async function startServer() {
     try {
       const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
       if (error) {
+        console.error("Auth Admin Delete Error:", error);
         // If user is already gone, consider it a success
         if (error.message.includes("User not found") || error.status === 404) {
           return res.json({ success: true, message: "User already deleted or not found in Auth" });
         }
-        throw error;
+        return res.status(500).json({ error: error.message });
       }
+      console.log("User deleted successfully from Auth");
       res.json({ success: true, message: "User deleted successfully from Auth" });
     } catch (error: any) {
-      console.error("Error deleting user:", error);
-      res.status(500).json({ error: error.message });
+      console.error("Error deleting user (Exception):", error);
+      res.status(500).json({ error: error.message || "Unknown server error" });
     }
   });
 
   // API: Update User in Supabase Auth (Email/Phone and Password)
   app.post("/api/admin/update-user", async (req, res) => {
+    console.log("POST /api/admin/update-user", req.body);
     if (!supabaseAdmin) {
+      console.error("Supabase Admin SDK not configured");
       return res.status(500).json({ error: "Supabase Admin SDK not configured" });
     }
 
@@ -79,17 +85,25 @@ async function startServer() {
         return res.status(400).json({ error: "No update data provided" });
       }
 
+      console.log(`Updating Auth User ${userId} with:`, updateData);
       const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, updateData);
+
       if (error) {
+        console.error("Auth Admin Update Error:", error);
         if (error.message.includes("User not found") || error.status === 404) {
           return res.status(404).json({ error: "Akun login tidak ditemukan di sistem keamanan. Silakan hapus dan daftarkan ulang kasir ini." });
         }
-        throw error;
+        if (error.message.includes("Email already exists") || error.message.includes("already registered")) {
+          return res.status(400).json({ error: "Nomor HP (Email) ini sudah digunakan oleh akun lain. Silakan gunakan nomor lain." });
+        }
+        return res.status(500).json({ error: error.message });
       }
+
+      console.log("User updated successfully in Auth");
       res.json({ success: true, message: "User updated successfully in Auth" });
     } catch (error: any) {
-      console.error("Error updating user:", error);
-      res.status(500).json({ error: error.message });
+      console.error("Error updating user (Exception):", error);
+      res.status(500).json({ error: error.message || "Unknown server error" });
     }
   });
 

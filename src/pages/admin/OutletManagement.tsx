@@ -207,8 +207,16 @@ export default function OutletManagement() {
       });
 
       if (!authUpdateResponse.ok) {
-        const errData = await authUpdateResponse.json();
-        throw new Error(errData.error || 'Gagal memperbarui akun login');
+        let errorMessage = 'Gagal memperbarui akun login';
+        try {
+          const errData = await authUpdateResponse.json();
+          errorMessage = errData.error || errorMessage;
+        } catch (e) {
+          const text = await authUpdateResponse.text();
+          console.error('API Error Response:', text);
+          errorMessage = `Error ${authUpdateResponse.status}: ${text || authUpdateResponse.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
       
       // 2. Update profile in database
@@ -250,8 +258,13 @@ export default function OutletManagement() {
       });
 
       if (!authDeleteResponse.ok) {
-        const errData = await authDeleteResponse.json();
-        console.warn('Gagal menghapus dari Auth (mungkin sudah terhapus):', errData.error);
+        try {
+          const errData = await authDeleteResponse.json();
+          console.warn('Gagal menghapus dari Auth (mungkin sudah terhapus):', errData.error);
+        } catch (e) {
+          const text = await authDeleteResponse.text();
+          console.warn('Gagal menghapus dari Auth (Response bukan JSON):', text);
+        }
       }
 
       // 2. Delete from users table
@@ -295,8 +308,13 @@ export default function OutletManagement() {
         });
         
         if (!authDeleteResponse.ok) {
-          const errData = await authDeleteResponse.json();
-          console.warn('Gagal menghapus kasir dari Auth:', errData.error);
+          try {
+            const errData = await authDeleteResponse.json();
+            console.warn('Gagal menghapus kasir dari Auth:', errData.error);
+          } catch (e) {
+            const text = await authDeleteResponse.text();
+            console.warn('Gagal menghapus kasir dari Auth (Response bukan JSON):', text);
+          }
         }
       }
 
