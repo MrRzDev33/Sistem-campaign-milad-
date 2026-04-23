@@ -1,5 +1,4 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import { createClient } from "@supabase/supabase-js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -14,7 +13,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing. Admin features will not work.");
+  console.warn("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing.");
 }
 
 const supabaseAdmin = (supabaseUrl && supabaseServiceKey)
@@ -27,112 +26,100 @@ const supabaseAdmin = (supabaseUrl && supabaseServiceKey)
   : null;
 
 export const app = express();
+app.use(express.json());
 
-async function setupApp() {
-  app.use(express.json());
+// Log all requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 
-  // Log all requests
-  app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
-  });
+// Handle preflight requests
+app.options("*", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.sendStatus(204);
+});
 
-  // Handle preflight requests
-  app.options("*", (req, res) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.sendStatus(204);
-  });
+// API: Delete User from Supabase Auth
+app.post("/api/admin/delete-user", async (req, res) => {
+  console.log("POST /api/admin/delete-user", req.body);
+  if (!supabaseAdmin) {
+    return res.status(500).json({ error: "Supabase Admin SDK not configured" });
+  }
 
-  // API: Delete User from Supabase Auth
-  app.post("/api/admin/delete-user", async (req, res) => {
-    console.log("POST /api/admin/delete-user", req.body);
-    if (!supabaseAdmin) {
-      console.error("Supabase Admin SDK not configured");
-      return res.status(500).json({ error: "Supabase Admin SDK not configured" });
-    }
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "userId is required" });
 
-    const { userId } = req.body;
-    if (!userId) {
-      return res.status(400).json({ error: "userId is required" });
-    }
-
-    try {
-      const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-      if (error) {
-        console.error("Auth Admin Delete Error:", error);
-        if (error.message.includes("User not found") || error.status === 404) {
-          return res.json({ success: true, message: "User already deleted or not found in Auth" });
-        }
-        return res.status(500).json({ error: error.message });
+  try {
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (error) {
+      if (error.message.includes("User not found") || error.status === 404) {
+        return res.json({ success: true, message: "User already deleted" });
       }
-      console.log("User deleted successfully from Auth");
-      res.json({ success: true, message: "User deleted successfully from Auth" });
-    } catch (error: any) {
-      console.error("Error deleting user (Exception):", error);
-      res.status(500).json({ error: error.message || "Unknown server error" });
+      return res.status(500).json({ error: error.message });
     }
-  });
+    res.json({ success: true, message: "User deleted successfully" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Unknown server error" });
+  }
+});
 
-  // API: Update User in Supabase Auth (Email/Phone and Password)
-  app.post("/api/admin/update-user", async (req, res) => {
-    console.log("POST /api/admin/update-user", req.body);
-    if (!supabaseAdmin) {
-      console.error("Supabase Admin SDK not configured");
-      return res.status(500).json({ error: "Supabase Admin SDK not configured" });
+// API: Update User in Supabase Auth
+app.post("/api/admin/update-user", async (req, res) => {
+  console.log("POST /api/admin/update-user", req.body);
+  if (!supabaseAdmin) {
+    return res.status(500).json({ error: "Supabase Admin SDK not configured" });
+  }
+
+  const { userId, email, password } = req.body;
+  if (!userId) return res.status(400).json({ error: "userId is required" });
+
+  try {
+    const updateData: any = {};
+    if (email) updateData.email = email;
+    if (password) updateData.password = password;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: "No update data provided" });
     }
 
-    const { userId, email, password } = req.body;
-    if (!userId) {
-      return res.status(400).json({ error: "userId is required" });
-    }
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, updateData);
 
-    try {
-      const updateData: any = {};
-      if (email) updateData.email = email;
-      if (password) updateData.password = password;
-
-      if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ error: "No update data provided" });
+    if (error) {
+      if (error.message.includes("User not found") || error.status === 404) {
+        return res.status(404).json({ error: "Akun login tidak ditemukan." });
       }
-
-      console.log(`Updating Auth User ${userId} with:`, updateData);
-      const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, updateData);
-
-      if (error) {
-        console.error("Auth Admin Update Error:", error);
-        if (error.message.includes("User not found") || error.status === 404) {
-          return res.status(404).json({ error: "Akun login tidak ditemukan di sistem keamanan. Silakan hapus dan daftarkan ulang kasir ini." });
-        }
-        if (error.message.includes("Email already exists") || error.message.includes("already registered")) {
-          return res.status(400).json({ error: "Nomor HP (Email) ini sudah digunakan oleh akun lain. Silakan gunakan nomor lain." });
-        }
-        return res.status(500).json({ error: error.message });
+      if (error.message.includes("Email already exists")) {
+        return res.status(400).json({ error: "Nomor HP (Email) sudah digunakan." });
       }
-
-      console.log("User updated successfully in Auth");
-      res.json({ success: true, message: "User updated successfully in Auth" });
-    } catch (error: any) {
-      console.error("Error updating user (Exception):", error);
-      res.status(500).json({ error: error.message || "Unknown server error" });
+      return res.status(500).json({ error: error.message });
     }
-  });
 
-  // Catch-all for other /api routes
-  app.all("/api/*", (req, res) => {
-    console.log(`[API 404/405] ${req.method} ${req.url}`);
-    res.status(405).json({ error: `Method ${req.method} not allowed for ${req.url}` });
-  });
+    res.json({ success: true, message: "User updated successfully" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Unknown server error" });
+  }
+});
 
-  // Static files or Vite middleware
+// Catch-all for other /api routes
+app.all("/api/*", (req, res) => {
+  res.status(405).json({ error: `Method ${req.method} not allowed for ${req.url}` });
+});
+
+// Setup dev/prod middlewares
+async function setupMiddlewares() {
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+    // Dynamic import to avoid bundling vite in production/vercel
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
+  } else if (!process.env.VERCEL) {
+    // Local production
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
@@ -141,17 +128,12 @@ async function setupApp() {
   }
 }
 
-async function startServer() {
-  await setupApp();
-  const PORT = process.env.PORT || 3000;
-  
-  if (!process.env.VERCEL) {
+// Start locally if not on Vercel
+if (!process.env.VERCEL) {
+  setupMiddlewares().then(() => {
+    const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
-  }
+  });
 }
-
-// In development/local, we start the server immediately.
-// In Vercel, the entry point will handle the request.
-startServer();
