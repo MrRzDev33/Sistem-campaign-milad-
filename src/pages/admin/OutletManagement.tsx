@@ -208,13 +208,13 @@ export default function OutletManagement() {
 
       if (!authUpdateResponse.ok) {
         let errorMessage = 'Gagal memperbarui akun login';
+        const responseText = await authUpdateResponse.text();
         try {
-          const errData = await authUpdateResponse.json();
+          const errData = JSON.parse(responseText);
           errorMessage = errData.error || errorMessage;
         } catch (e) {
-          const text = await authUpdateResponse.text();
-          console.error('API Error Response:', text);
-          errorMessage = `Error ${authUpdateResponse.status}: ${text || authUpdateResponse.statusText}`;
+          console.error('API Error Response:', responseText);
+          errorMessage = `Error ${authUpdateResponse.status}: ${responseText || authUpdateResponse.statusText}`;
         }
         throw new Error(errorMessage);
       }
@@ -258,12 +258,12 @@ export default function OutletManagement() {
       });
 
       if (!authDeleteResponse.ok) {
+        const responseText = await authDeleteResponse.text();
         try {
-          const errData = await authDeleteResponse.json();
+          const errData = JSON.parse(responseText);
           console.warn('Gagal menghapus dari Auth (mungkin sudah terhapus):', errData.error);
         } catch (e) {
-          const text = await authDeleteResponse.text();
-          console.warn('Gagal menghapus dari Auth (Response bukan JSON):', text);
+          console.warn('Gagal menghapus dari Auth (Response bukan JSON):', responseText);
         }
       }
 
@@ -308,12 +308,12 @@ export default function OutletManagement() {
         });
         
         if (!authDeleteResponse.ok) {
+          const responseText = await authDeleteResponse.text();
           try {
-            const errData = await authDeleteResponse.json();
+            const errData = JSON.parse(responseText);
             console.warn('Gagal menghapus kasir dari Auth:', errData.error);
           } catch (e) {
-            const text = await authDeleteResponse.text();
-            console.warn('Gagal menghapus kasir dari Auth (Response bukan JSON):', text);
+            console.warn('Gagal menghapus kasir dari Auth (Response bukan JSON):', responseText);
           }
         }
       }

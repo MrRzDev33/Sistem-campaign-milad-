@@ -32,6 +32,20 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Log all requests
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+  });
+
+  // Handle preflight requests
+  app.options("*", (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.sendStatus(204);
+  });
+
   // API: Delete User from Supabase Auth
   app.post("/api/admin/delete-user", async (req, res) => {
     console.log("POST /api/admin/delete-user", req.body);
@@ -105,6 +119,12 @@ async function startServer() {
       console.error("Error updating user (Exception):", error);
       res.status(500).json({ error: error.message || "Unknown server error" });
     }
+  });
+
+  // Catch-all for other /api routes
+  app.all("/api/*", (req, res) => {
+    console.log(`[API 404/405] ${req.method} ${req.url}`);
+    res.status(405).json({ error: `Method ${req.method} not allowed for ${req.url}` });
   });
 
   // Vite middleware for development
