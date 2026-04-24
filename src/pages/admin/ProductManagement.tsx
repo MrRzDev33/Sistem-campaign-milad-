@@ -26,6 +26,8 @@ export default function ProductManagement() {
   const [outletPrices, setOutletPrices] = useState<Record<string, string>>({});
   const [isLoyalty, setIsLoyalty] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [outletSearchQuery, setOutletSearchQuery] = useState('');
+
 
   useEffect(() => {
     fetchProducts();
@@ -89,6 +91,7 @@ export default function ProductManagement() {
       setIsLoyalty(false);
     }
     setImageFile(null);
+    setOutletSearchQuery('');
     setIsModalOpen(true);
   };
 
@@ -469,8 +472,35 @@ export default function ProductManagement() {
                       {selectedOutlets.length === outlets.length ? 'Hapus Semua Ceklis' : 'Ceklis Semua'}
                     </button>
                   </div>
+
+                  <div className="bg-orange-50/50 p-3 rounded-2xl flex items-center gap-2 border border-orange-100">
+                    <Search className="w-4 h-4 text-orange-400 ml-1" />
+                    <input 
+                      type="text"
+                      placeholder="Cari nama atau alamat outlet..."
+                      value={outletSearchQuery}
+                      onChange={(e) => setOutletSearchQuery(e.target.value)}
+                      className="bg-transparent border-none outline-none text-xs flex-1 text-gray-700 placeholder:text-gray-400"
+                    />
+                    {outletSearchQuery && (
+                      <button 
+                        type="button"
+                        onClick={() => setOutletSearchQuery('')}
+                        className="p-1 hover:bg-orange-100 rounded-lg text-orange-400 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
                   <div className="bg-gray-50 border border-gray-100 rounded-3xl p-4 max-h-[350px] overflow-y-auto space-y-3">
-                    {outlets.map(outlet => {
+                    {outlets
+                      .filter(o => 
+                        o.nama_outlet.toLowerCase().includes(outletSearchQuery.toLowerCase()) || 
+                        o.alamat.toLowerCase().includes(outletSearchQuery.toLowerCase())
+                      )
+                      .map(outlet => {
+
                       const isSelected = selectedOutlets.includes(outlet.id);
                       
                       return (

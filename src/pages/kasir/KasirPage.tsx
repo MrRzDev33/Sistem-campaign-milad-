@@ -146,6 +146,22 @@ export default function KasirPage() {
     }
   };
 
+  // Sanitasi Keranjang: Jika ada item di keranjang yang ID-nya tidak ada di database 
+  // (misal setelah admin melakukan Reset Data), hapus item tersebut secara otomatis.
+  useEffect(() => {
+    if (!loading && products.length > 0 && items.length > 0) {
+      const validProductIds = products.map(p => p.id);
+      const invalidItems = items.filter(item => !validProductIds.includes(item.id));
+      
+      if (invalidItems.length > 0) {
+        invalidItems.forEach(item => {
+          removeItem(item.id);
+        });
+        toast.error(`${invalidItems.length} produk di keranjang Anda telah dihapus oleh Admin (Data di-reset). Silakan pilih menu kembali.`);
+      }
+    }
+  }, [products, items, loading, removeItem]);
+
   const fetchHistory = async () => {
     // In a real app, we'd fetch from Supabase
   };
@@ -261,6 +277,12 @@ export default function KasirPage() {
     setIsSubmitting(true);
     
     try {
+      // Validasi apakah semua item di keranjang masih ada di database
+      const invalidItem = items.find(item => !products.find(p => p.id === item.id));
+      if (invalidItem) {
+        throw new Error(`Produk "${invalidItem.nama}" sudah tidak ada di sistem (kemungkinan dihapus/direset oleh admin). Harap hapus dari keranjang.`);
+      }
+
       const hasLoyalty = items.some(item => {
         const p = products.find(prod => prod.id === item.id);
         return p?.is_loyalty;
@@ -341,7 +363,14 @@ export default function KasirPage() {
       fetchTransactions();
     } catch (error: any) {
       console.error('Error saving transaction:', error);
-      toast.error(error.message || 'Gagal menyimpan transaksi');
+      let message = error.message || 'Gagal menyimpan transaksi';
+      
+      // Deteksi error network / fetch
+      if (message.toLowerCase().includes('fetch')) {
+        message = 'Koneksi internet terputus atau tidak stabil. Silakan periksa sinyal Anda dan coba lagi.';
+      }
+      
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
