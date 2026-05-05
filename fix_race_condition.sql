@@ -4,7 +4,8 @@
 -- 1. Mengaktifkan fitur Realtime untuk tabel transactions
 -- Ini sangat penting agar Kasir dan Admin bisa melihat sisa kuota yang ter-update 
 -- secara otomatis tanpa perlu me-refresh halaman.
-ALTER PUBLICATION supabase_realtime ADD TABLE transactions;
+-- (Baris ini dinonaktifkan karena tabel sudah terdaftar di realtime, mencegah error "already member")
+-- ALTER PUBLICATION supabase_realtime ADD TABLE transactions;
 
 -- 2. Memperbarui Fungsi Transaksi dengan Advisory Lock
 CREATE OR REPLACE FUNCTION process_transaction_atomic(
@@ -42,7 +43,7 @@ BEGIN
   PERFORM pg_advisory_xact_lock(v_lock_key);
 
   -- Setelah mendapat giliran (lock), baru kita hitung sisa kuota yang PALING AKURAT.
-  v_current_count := (SELECT COUNT(*)::INTEGER FROM transactions WHERE promo_type = p_promo_type);
+  v_current_count := (SELECT COUNT(*)::INTEGER FROM transactions WHERE COALESCE(promo_type, 'regular') = p_promo_type);
 
   IF v_current_count >= v_limit THEN
     -- Lock akan otomatis terlepas saat function ini melakukan RETURN.

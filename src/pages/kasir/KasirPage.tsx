@@ -325,27 +325,36 @@ export default function KasirPage() {
       const transactionId = crypto.randomUUID();
       const promoType = hasLoyalty ? 'loyalty_7mei' : 'regular';
 
-      // Atomic RPC call for limit protection
-      const { data: rpcResult, error: rpcError } = await supabase.rpc('process_transaction_atomic', {
-        p_id: transactionId,
-        p_outlet_id: currentUser.outlet_id,
-        p_user_id: currentUser.id,
-        p_total: total,
-        p_gender: customerGender,
-        p_age_range: customerAgeRange,
-        p_receipt_url: receiptUrl,
-        p_promo_type: promoType,
-        p_items: items.map(item => ({
-          product_id: item.id,
-          qty: item.qty,
-          harga: getProductPrice(item.id)
-        }))
-      });
+      try {
+        // Atomic RPC call for limit protection
+        const { data: rpcResult, error: rpcError } = await supabase.rpc('process_transaction_atomic', {
+          p_id: transactionId,
+          p_outlet_id: currentUser.outlet_id,
+          p_user_id: currentUser.id,
+          p_total: total,
+          p_gender: customerGender,
+          p_age_range: customerAgeRange,
+          p_receipt_url: receiptUrl,
+          p_promo_type: promoType,
+          p_items: items.map(item => ({
+            product_id: item.id,
+            qty: item.qty,
+            harga: getProductPrice(item.id)
+          }))
+        });
 
-      if (rpcError) throw rpcError;
-      
-      if (!rpcResult || !rpcResult.success) {
-        throw new Error(rpcResult?.message || 'Gagal memproses transaksi di server');
+        if (rpcError) throw rpcError;
+        
+        if (!rpcResult || !rpcResult.success) {
+          throw new Error(rpcResult?.message || 'Gagal memproses transaksi di server');
+        }
+      } catch (err: any) {
+        // Hapus foto struk jika transaksi gagal disimpan (cleanup)
+        const urlParts = receiptUrl.split('/transactions/');
+        if (urlParts.length > 1) {
+          await supabase.storage.from('transactions').remove([urlParts[1]]);
+        }
+        throw err;
       }
 
       toast.success('Transaksi berhasil disimpan');
@@ -506,7 +515,7 @@ export default function KasirPage() {
                   </div>
                   
                   <h4 className={cn(
-                    "font-bold text-sm line-clamp-2 mb-1 flex-1",
+                    "font-bold text-sm line-clamp-2 mb-1",
                     isLoyalty ? "text-yellow-900" : "text-gray-900"
                   )}>
                     {product.nama}

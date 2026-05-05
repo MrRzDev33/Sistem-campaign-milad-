@@ -96,6 +96,39 @@ export default function Dashboard() {
     setResetStep(3);
     setLoading(true);
     try {
+      // 0. Hapus file gambar dari Storage terlebih dahulu agar tidak memakan kuota
+      const { data: txWithImages } = await supabase.from('transactions').select('receipt_url').not('receipt_url', 'is', null);
+      if (txWithImages && txWithImages.length > 0) {
+        const filePaths = txWithImages.map(t => {
+          if (!t.receipt_url) return null;
+          const parts = t.receipt_url.split('/transactions/');
+          return parts.length > 1 ? parts[1] : null;
+        }).filter(Boolean) as string[];
+
+        if (filePaths.length > 0) {
+          for (let i = 0; i < filePaths.length; i += 100) {
+            await supabase.storage.from('transactions').remove(filePaths.slice(i, i + 100));
+          }
+        }
+      }
+
+      if (resetType === 'all') {
+        const { data: prodWithImages } = await supabase.from('products').select('gambar_url').not('gambar_url', 'is', null);
+        if (prodWithImages && prodWithImages.length > 0) {
+          const prodPaths = prodWithImages.map(p => {
+            if (!p.gambar_url) return null;
+            const parts = p.gambar_url.split('/products/');
+            return parts.length > 1 ? parts[1] : null;
+          }).filter(Boolean) as string[];
+
+          if (prodPaths.length > 0) {
+            for (let i = 0; i < prodPaths.length; i += 100) {
+              await supabase.storage.from('products').remove(prodPaths.slice(i, i + 100));
+            }
+          }
+        }
+      }
+
       // 1. Delete Transaction Items
       const { error: err1 } = await supabase.from('transaction_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (err1) throw new Error(`Gagal hapus item transaksi: ${err1.message}`);
