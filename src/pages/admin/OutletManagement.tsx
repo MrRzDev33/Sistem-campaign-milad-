@@ -298,6 +298,18 @@ export default function OutletManagement() {
     if (!itemToDelete) return;
     setSubmitting(true);
     try {
+      // 1. Cek apakah outlet ini memiliki riwayat transaksi
+      const { count, error: countError } = await supabase
+        .from('transactions')
+        .select('*', { count: 'exact', head: true })
+        .eq('outlet_id', itemToDelete);
+
+      if (countError) throw countError;
+
+      if (count && count > 0) {
+        throw new Error(`Outlet ini tidak dapat dihapus karena memiliki ${count} riwayat transaksi. Menghapus outlet akan merusak data laporan pendapatan keuangan.`);
+      }
+
       // Find the kasir associated with this outlet to delete their auth account too
       const kasirToDelete = kasirs.find(k => k.outlet_id === itemToDelete);
       

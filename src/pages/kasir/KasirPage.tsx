@@ -185,7 +185,7 @@ export default function KasirPage() {
   const uploadReceipt = async (file: File) => {
     // Compression options
     const options = {
-      maxSizeMB: 0.5, // Max size 500KB
+      maxSizeMB: 0.1, // Max size 100KB (Darurat)
       maxWidthOrHeight: 1280,
       useWebWorker: true,
     };
@@ -196,7 +196,10 @@ export default function KasirPage() {
       fileToUpload = new File([compressedFile], file.name, { type: file.type });
     } catch (error) {
       console.error('Compression error:', error);
-      // Fallback to original file if compression fails
+      // Fallback to original file if compression fails, but enforce 1MB limit
+      if (file.size > 1 * 1024 * 1024) {
+        throw new Error('Ukuran foto terlalu besar (Maks 1MB) dan sistem gagal melakukan kompresi. Solusi: Turunkan resolusi kamera HP Anda, atau crop foto tersebut.');
+      }
     }
 
     const fileExt = fileToUpload.name.split('.').pop();
@@ -222,7 +225,7 @@ export default function KasirPage() {
     try {
       // 1. Compress immediately
       const options = {
-        maxSizeMB: 0.2, // Small enough for base64 storage
+        maxSizeMB: 0.1, // Small enough for base64 storage
         maxWidthOrHeight: 1024,
         useWebWorker: true,
       };
@@ -240,6 +243,12 @@ export default function KasirPage() {
     } catch (e) {
       console.error('Initial processing error:', e);
       setIsProcessingImage(false);
+      
+      if (file.size > 1 * 1024 * 1024) {
+        toast.error('Ukuran foto terlalu besar (Maks 1MB) dan gagal dikompres. Solusi: Turunkan resolusi kamera HP Anda, atau crop foto tersebut agar ukurannya lebih kecil.', { duration: 8000 });
+        return;
+      }
+      
       setReceiptFile(file); // Fallback
     }
   };

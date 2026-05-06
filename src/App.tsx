@@ -157,8 +157,10 @@ export default function App() {
       return;
     }
 
-    // Ensure loading state is true when starting to fetch
-    setLoading(true);
+    // Only show loading screen if user data hasn't been loaded yet
+    if (!useAuthStore.getState().user) {
+      setLoading(true);
+    }
 
     try {
       const { data, error } = await supabase

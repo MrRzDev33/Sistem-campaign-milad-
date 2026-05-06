@@ -149,6 +149,9 @@ export default function ProductManagement() {
       fileToUpload = await imageCompression(file, options);
     } catch (error) {
       console.warn('Image compression failed, uploading original:', error);
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('Ukuran foto terlalu besar (Maks 5MB) dan sistem gagal melakukan kompresi. Solusi: Turunkan resolusi kamera, atau crop foto tersebut agar ukurannya lebih kecil.');
+      }
     }
 
     const fileExt = file.name.split('.').pop();
@@ -266,6 +269,8 @@ export default function ProductManagement() {
     if (!itemToDelete) return;
     setSubmitting(true);
     try {
+      const product = products.find(p => p.id === itemToDelete);
+
       const { error } = await supabase
         .from('products')
         .delete()
@@ -273,7 +278,17 @@ export default function ProductManagement() {
       
       if (error) throw error;
       
-      toast.success('Produk berhasil dihapus');
+      // Bersihkan file gambar di storage jika ada
+      if (product && product.gambar_url) {
+        const urlParts = product.gambar_url.split('/public/products/');
+        if (urlParts.length > 1) {
+          const filePath = urlParts[1];
+          // Fire and forget, tidak perlu throw error jika file tidak ada
+          supabase.storage.from('products').remove([filePath]).catch(console.error);
+        }
+      }
+
+      toast.success('Produk beserta file gambar berhasil dihapus');
       fetchProducts();
     } catch (error: any) {
       console.error('Error deleting product:', error);
