@@ -7,7 +7,7 @@ import { Plus, Store, UserPlus, Trash2, MapPin, Phone, Loader2, X, Save, Edit2, 
 import { useDemoStore } from '../../store';
 
 export default function OutletManagement() {
-  const { 
+  const {
     setOutlets: setDemoOutlets,
     setKasirs: setDemoKasirs
   } = useDemoStore();
@@ -48,14 +48,14 @@ export default function OutletManagement() {
         .from('outlets')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (outletsError) throw outletsError;
 
       const { data: kasirsData, error: kasirsError } = await supabase
         .from('users')
         .select('*')
         .eq('role', 'kasir');
-      
+
       if (kasirsError) throw kasirsError;
 
       const finalOutlets = outletsData || [];
@@ -79,7 +79,7 @@ export default function OutletManagement() {
   const handleAddUnified = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    
+
     try {
       const cleanPhone = phone.trim();
       // 0. Aggressive Cleanup: Remove any existing profile with this phone number
@@ -109,7 +109,7 @@ export default function OutletManagement() {
             alamat,
             provinsi
           }]);
-        
+
         if (outletError) throw outletError;
         outletId = newOutletId;
       }
@@ -129,7 +129,7 @@ export default function OutletManagement() {
             email,
             password,
           });
-          
+
           if (signInError) {
             throw new Error('Nomor HP ini sudah terdaftar di sistem keamanan. Silakan gunakan password yang sama seperti pendaftaran sebelumnya, atau hubungi Admin Pusat untuk reset total.');
           }
@@ -154,14 +154,14 @@ export default function OutletManagement() {
             phone: cleanPhone,
             address: alamat
           }], { onConflict: 'id' });
-        
+
         if (kasirError) throw kasirError;
       }
 
       toast.success('Outlet dan Akun Kasir berhasil didaftarkan');
       setIsOutletModalOpen(false);
       fetchData();
-      
+
       // Reset form
       setNamaOutlet('');
       setAlamat('');
@@ -196,7 +196,7 @@ export default function OutletManagement() {
     try {
       const cleanPhone = editPhone.trim();
       const newEmail = `${cleanPhone}@dmc.id`;
-      
+
       // 1. Update Supabase Auth via Admin API
       const authUpdateResponse = await fetch('/api/admin/update-user', {
         method: 'POST',
@@ -220,7 +220,7 @@ export default function OutletManagement() {
         }
         throw new Error(errorMessage);
       }
-      
+
       // 2. Update profile in database
       const outlet = outlets.find(o => o.id === editingKasir.outlet_id);
       const outletName = outlet?.nama_outlet || 'outlet';
@@ -274,9 +274,9 @@ export default function OutletManagement() {
         .from('users')
         .delete()
         .eq('id', kasirId);
-      
+
       if (error) throw error;
-      
+
       toast.success('Akun kasir dan login berhasil dihapus total');
       fetchData();
     } catch (error: any) {
@@ -312,14 +312,14 @@ export default function OutletManagement() {
 
       // Find the kasir associated with this outlet to delete their auth account too
       const kasirToDelete = kasirs.find(k => k.outlet_id === itemToDelete);
-      
+
       if (kasirToDelete) {
         const authDeleteResponse = await fetch('/api/admin/delete-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: kasirToDelete.id })
         });
-        
+
         if (!authDeleteResponse.ok) {
           const responseText = await authDeleteResponse.text();
           try {
@@ -335,9 +335,9 @@ export default function OutletManagement() {
         .from('outlets')
         .delete()
         .eq('id', itemToDelete);
-      
+
       if (error) throw error;
-      
+
       toast.success('Outlet dan akun login terkait berhasil dihapus total');
       fetchData();
     } catch (error: any) {
@@ -387,12 +387,12 @@ export default function OutletManagement() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {loading ? (
-              [1,2,3].map(i => <div key={i} className="h-32 bg-gray-100 animate-pulse rounded-3xl"></div>)
-            ) : outlets.filter(o => 
-                o.nama_outlet.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                o.provinsi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                o.alamat.toLowerCase().includes(searchQuery.toLowerCase())
-              ).map((outlet) => {
+              [1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-100 animate-pulse rounded-3xl"></div>)
+            ) : outlets.filter(o =>
+              o.nama_outlet.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              o.provinsi.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              o.alamat.toLowerCase().includes(searchQuery.toLowerCase())
+            ).map((outlet) => {
               const kasir = kasirs.find(k => k.outlet_id === outlet.id);
               return (
                 <div key={outlet.id} className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 flex flex-col justify-between group hover:border-orange-200 transition-all">
@@ -401,7 +401,7 @@ export default function OutletManagement() {
                       <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500">
                         <Store className="w-6 h-6" />
                       </div>
-                      <button 
+                      <button
                         onClick={() => handleDeleteOutlet(outlet.id)}
                         className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                       >
@@ -417,44 +417,44 @@ export default function OutletManagement() {
                       </p>
                     </div>
                   </div>
-                  
-                    <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
-                          <Phone className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-gray-900 truncate">{kasir?.phone || 'Belum ada No HP'}</p>
-                          <p className="text-[10px] text-gray-400 truncate">{kasir?.username || 'Belum ada akun'}</p>
-                        </div>
+
+                  <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
+                        <Phone className="w-4 h-4" />
                       </div>
-                      {kasir && (
-                        <div className="flex items-center gap-1">
-                          <button 
-                            onClick={() => handleEditKasir(kasir)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                            title="Edit Akun Kasir"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteKasir(kasir.id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                            title="Hapus Akun Kasir"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-gray-900 truncate">{kasir?.phone || 'Belum ada No HP'}</p>
+                        <p className="text-[10px] text-gray-400 truncate">{kasir?.username || 'Belum ada akun'}</p>
+                      </div>
                     </div>
-                    {kasir?.address && (
-                      <div className="mt-2 flex items-start gap-3">
-                        <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center text-green-500 flex-shrink-0">
-                          <MapPin className="w-4 h-4" />
-                        </div>
-                        <p className="text-[10px] text-gray-500 line-clamp-2">{kasir.address}</p>
+                    {kasir && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleEditKasir(kasir)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          title="Edit Akun Kasir"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteKasir(kasir.id)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Hapus Akun Kasir"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     )}
+                  </div>
+                  {kasir?.address && (
+                    <div className="mt-2 flex items-start gap-3">
+                      <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center text-green-500 flex-shrink-0">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <p className="text-[10px] text-gray-500 line-clamp-2">{kasir.address}</p>
+                    </div>
+                  )}
                 </div>
               );
             })}

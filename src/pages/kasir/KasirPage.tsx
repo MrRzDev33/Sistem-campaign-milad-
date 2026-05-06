@@ -338,7 +338,6 @@ export default function KasirPage() {
 
       const receiptUrl = await uploadReceipt(fileToUpload);
       const transactionId = crypto.randomUUID();
-      const promoType = hasLoyalty ? 'loyalty_7mei' : 'regular';
 
       try {
         // Atomic RPC call for limit protection

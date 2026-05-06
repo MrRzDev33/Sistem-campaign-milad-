@@ -288,7 +288,7 @@ export default function Reports() {
                     </div>
                   </td>
                 </tr>
-              ) : (
+              )) : (
                 <tr>
                   <td colSpan={7} className="px-8 py-20 text-center">
                     <div className="flex flex-col items-center gap-4 text-gray-300">
