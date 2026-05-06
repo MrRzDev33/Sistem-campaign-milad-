@@ -51,7 +51,7 @@ export default function KasirPage() {
     // Listen for new transactions from other cashiers to update limits in real-time
     const channel = supabase
       .channel('public:transactions:kasir')
-      .on('postgres', { event: 'INSERT', schema: 'public', table: 'transactions' }, () => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, () => {
         fetchTransactions();
       })
       .subscribe();
@@ -286,10 +286,22 @@ export default function KasirPage() {
         throw new Error(`Produk "${invalidItem.nama}" sudah tidak ada di sistem (kemungkinan dihapus/direset oleh admin). Harap hapus dari keranjang.`);
       }
 
-      const hasLoyalty = items.some(item => {
+      const hasLoyalty = items.every(item => {
         const p = products.find(prod => prod.id === item.id);
-        return p?.is_loyalty;
+        return p !== undefined && p.is_loyalty === true;
       });
+
+      const hasRegular = items.every(item => {
+        const p = products.find(prod => prod.id === item.id);
+        return p !== undefined && !p.is_loyalty;
+      });
+
+      // Blokir keras: jangan izinkan keranjang campur lolos hingga tahap simpan
+      if (!hasLoyalty && !hasRegular) {
+        throw new Error('Keranjang berisi campuran produk Promo dan Reguler. Harap kosongkan keranjang dan proses secara terpisah.');
+      }
+
+      const promoType = hasLoyalty ? 'loyalty_7mei' : 'regular';
 
       // Validasi & Refresh Sesi jika perlu
       let currentUser = user;
@@ -478,12 +490,20 @@ export default function KasirPage() {
                 <button
                   key={product.id}
                   onClick={() => {
-                    const hasLoyaltyInCart = items.some(i => products.find(p => p.id === i.id)?.is_loyalty);
-                    const hasRegularInCart = items.some(i => !products.find(p => p.id === i.id)?.is_loyalty);
+                    // Cek apakah produk di keranjang adalah loyalty atau bukan
+                    // Pastikan produk terdefinisi sebelum cek is_loyalty
+                    const hasLoyaltyInCart = items.some(i => {
+                      const p = products.find(prod => prod.id === i.id);
+                      return p !== undefined && p.is_loyalty === true;
+                    });
+                    const hasRegularInCart = items.some(i => {
+                      const p = products.find(prod => prod.id === i.id);
+                      return p !== undefined && !p.is_loyalty;
+                    });
 
                     if (isLoyalty) {
                       if (hasRegularInCart) {
-                        toast.error('Produk Promo dan Reguler tidak bisa digabung dalam 1 struk. Mohon proses secara terpisah.', { duration: 4000 });
+                        toast.error('Produk Promo tidak bisa digabung dengan Reguler dalam 1 struk. Mohon proses secara terpisah.', { duration: 5000 });
                         return;
                       }
                       if (loyaltyCount >= LOYALTY_LIMIT) {
@@ -494,7 +514,7 @@ export default function KasirPage() {
                       setShowLoyaltyModal(true);
                     } else {
                       if (hasLoyaltyInCart) {
-                        toast.error('Produk Reguler dan Promo tidak bisa digabung dalam 1 struk. Mohon proses secara terpisah.', { duration: 4000 });
+                        toast.error('Produk Reguler tidak bisa digabung dengan Promo dalam 1 struk. Mohon proses secara terpisah.', { duration: 5000 });
                         return;
                       }
                       handleOpenQtyModal(product);
