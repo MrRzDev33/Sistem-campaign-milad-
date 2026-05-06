@@ -257,13 +257,13 @@ export default function Reports() {
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="flex flex-col gap-1 text-xs">
+                    <div className="flex flex-col gap-1">
                       {t.items && t.items.length > 0 ? t.items.map(item => (
-                        <span key={item.id} className="text-gray-600 font-medium whitespace-nowrap">
-                          {item.qty}x {item.product?.nama || 'Produk'}
+                        <span key={item.id} className="inline-flex items-center gap-1 text-[10px] font-bold bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full w-fit whitespace-nowrap">
+                          {item.qty}× {item.product?.nama ?? `Produk (${item.product_id.slice(0,6)})`}
                         </span>
                       )) : (
-                        <span className="text-gray-300">-</span>
+                        <span className="text-[10px] text-gray-300 italic">Data lama</span>
                       )}
                     </div>
                   </td>

@@ -943,6 +943,13 @@ export default function KasirPage() {
               </button>
               <button
                 onClick={() => {
+                  const hasRegularInCart = items.some(i => !products.find(p => p.id === i.id)?.is_loyalty);
+                  if (hasRegularInCart) {
+                    toast.error('Produk Promo dan Reguler tidak bisa digabung dalam 1 struk. Kosongkan keranjang terlebih dahulu.', { duration: 5000 });
+                    setShowLoyaltyModal(false);
+                    setSelectedLoyaltyProductModal(null);
+                    return;
+                  }
                   addItem(selectedLoyaltyProductModal, 0, 1);
                   setShowLoyaltyModal(false);
                   setSelectedLoyaltyProductModal(null);
