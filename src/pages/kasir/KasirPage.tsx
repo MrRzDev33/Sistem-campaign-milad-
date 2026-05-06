@@ -83,18 +83,12 @@ export default function KasirPage() {
       setTransactions(data || []);
       
       // Fetch global counts for limit protection
-      const { count: regCountResult } = await supabase
-        .from('transactions')
-        .select('*', { count: 'exact', head: true })
-        .or('promo_type.eq.regular,promo_type.is.null');
+      const { data: quotaData, error: quotaError } = await supabase.rpc('get_current_quotas');
       
-      const { count: loyCountResult } = await supabase
-        .from('transactions')
-        .select('*', { count: 'exact', head: true })
-        .eq('promo_type', 'loyalty_7mei');
-        
-      useAppStore.getState().setTransactionCount(regCountResult || 0);
-      useAppStore.getState().setLoyaltyCount(loyCountResult || 0);
+      if (!quotaError && quotaData) {
+        useAppStore.getState().setTransactionCount(quotaData.regular || 0);
+        useAppStore.getState().setLoyaltyCount(quotaData.loyalty || 0);
+      }
     } catch (e) {
       console.error('Error fetching transactions:', e);
     }
@@ -484,7 +478,14 @@ export default function KasirPage() {
                 <button
                   key={product.id}
                   onClick={() => {
+                    const hasLoyaltyInCart = items.some(i => products.find(p => p.id === i.id)?.is_loyalty);
+                    const hasRegularInCart = items.some(i => !products.find(p => p.id === i.id)?.is_loyalty);
+
                     if (isLoyalty) {
+                      if (hasRegularInCart) {
+                        toast.error('Produk Promo dan Reguler tidak bisa digabung dalam 1 struk. Mohon proses secara terpisah.', { duration: 4000 });
+                        return;
+                      }
                       if (loyaltyCount >= LOYALTY_LIMIT) {
                         toast.error('Maaf, kuota promo ultah sudah habis.');
                         return;
@@ -492,6 +493,10 @@ export default function KasirPage() {
                       setSelectedLoyaltyProductModal(product);
                       setShowLoyaltyModal(true);
                     } else {
+                      if (hasLoyaltyInCart) {
+                        toast.error('Produk Reguler dan Promo tidak bisa digabung dalam 1 struk. Mohon proses secara terpisah.', { duration: 4000 });
+                        return;
+                      }
                       handleOpenQtyModal(product);
                     }
                   }}

@@ -221,6 +221,7 @@ export default function Reports() {
                 <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Waktu</th>
                 <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Outlet</th>
                 <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tipe</th>
+                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Detail Produk</th>
                 <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Demografi</th>
                 <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Total</th>
                 <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Aksi</th>
@@ -230,7 +231,7 @@ export default function Reports() {
               {loading ? (
                 [1,2,3,4,5].map(i => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={5} className="px-8 py-6"><div className="h-4 bg-gray-100 rounded w-full"></div></td>
+                    <td colSpan={7} className="px-8 py-6"><div className="h-4 bg-gray-100 rounded w-full"></div></td>
                   </tr>
                 ))
               ) : filteredTransactions.length > 0 ? filteredTransactions.map((t) => (
@@ -256,6 +257,17 @@ export default function Reports() {
                     </div>
                   </td>
                   <td className="px-8 py-6">
+                    <div className="flex flex-col gap-1 text-xs">
+                      {t.items && t.items.length > 0 ? t.items.map(item => (
+                        <span key={item.id} className="text-gray-600 font-medium whitespace-nowrap">
+                          {item.qty}x {item.product?.nama || 'Produk'}
+                        </span>
+                      )) : (
+                        <span className="text-gray-300">-</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full w-fit">{t.customer_gender}</span>
                       <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full w-fit truncate max-w-[150px]">{t.customer_age_range}</span>
@@ -276,9 +288,9 @@ export default function Reports() {
                     </div>
                   </td>
                 </tr>
-              )) : (
+              ) : (
                 <tr>
-                  <td colSpan={5} className="px-8 py-20 text-center">
+                  <td colSpan={7} className="px-8 py-20 text-center">
                     <div className="flex flex-col items-center gap-4 text-gray-300">
                       <FileText className="w-16 h-16 opacity-20" />
                       <p className="font-bold">Tidak ada data transaksi ditemukan.</p>

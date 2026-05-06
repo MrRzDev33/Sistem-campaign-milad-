@@ -40,23 +40,14 @@ export default function App() {
 
   const fetchTransactionCount = async () => {
     try {
-      // 1. Fetch Regular Count
-      const { count: regCount, error: regError } = await supabase
-        .from('transactions')
-        .select('*', { count: 'exact', head: true })
-        .eq('promo_type', 'regular');
+      const { data, error } = await supabase.rpc('get_current_quotas');
       
-      if (regError) throw regError;
-      if (regCount !== null) setTransactionCount(regCount);
-
-      // 2. Fetch Loyalty Count
-      const { count: loyCount, error: loyError } = await supabase
-        .from('transactions')
-        .select('*', { count: 'exact', head: true })
-        .eq('promo_type', 'loyalty_7mei');
+      if (error) throw error;
       
-      if (loyError) throw loyError;
-      if (loyCount !== null) setLoyaltyCount(loyCount);
+      if (data) {
+        setTransactionCount(data.regular || 0);
+        setLoyaltyCount(data.loyalty || 0);
+      }
     } catch (error) {
       console.error('Error fetching stats:', error);
     }

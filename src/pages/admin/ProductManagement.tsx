@@ -186,7 +186,7 @@ export default function ProductManagement() {
 
       const productData = {
         nama,
-        harga_default: parseInt(harga),
+        harga_default: Math.round(Number(harga)),
         gambar_url: imageUrl,
         is_loyalty: isLoyalty,
       };
@@ -227,7 +227,7 @@ export default function ProductManagement() {
         const newPrices = selectedOutlets.map(outletId => ({
           product_id: productId,
           outlet_id: outletId,
-          harga: parseInt(outletPrices[outletId] || harga)
+          harga: Math.round(Number(outletPrices[outletId] || harga))
         }));
 
         const { error: insertPricesError } = await supabase
