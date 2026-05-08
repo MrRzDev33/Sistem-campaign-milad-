@@ -194,7 +194,13 @@ export default function KasirPage() {
 
   const getProductPrice = (productId: string) => {
     const price = productPrices.find(p => p.product_id === productId && p.outlet_id === user?.outlet_id);
-    return price ? price.harga : products.find(p => p.id === productId)?.harga_default || 0;
+    if (price) return price.harga;
+
+    const defaultPrice = products.find(p => p.id === productId)?.harga_default;
+    if (defaultPrice !== undefined && defaultPrice !== null) return defaultPrice;
+
+    console.warn(`Price not found for product ${productId}, returning 0`);
+    return 0;
   };
 
   const uploadReceipt = async (file: File) => {
@@ -315,6 +321,12 @@ export default function KasirPage() {
       // Blokir keras: jangan izinkan keranjang campur lolos hingga tahap simpan
       if (!hasLoyalty && !hasRegular) {
         throw new Error('Keranjang berisi campuran produk Promo dan Reguler. Harap kosongkan keranjang dan proses secara terpisah.');
+      }
+
+      // Proteksi Harga 0: Jangan izinkan transaksi reguler dengan harga total 0 atau item berharga 0
+      const hasZeroPriceItem = items.some(item => !item.is_loyalty && (item.harga <= 0 || getProductPrice(item.id) <= 0));
+      if (hasRegular && hasZeroPriceItem) {
+        throw new Error('Ditemukan produk dengan harga Rp0. Mohon hapus produk tersebut dan tambahkan kembali atau hubungi Admin.');
       }
 
       const promoType = hasLoyalty ? 'loyalty_7mei' : 'regular';
