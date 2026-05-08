@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Download, Search, FileText, Store, Eye, ImageIcon, Loader2, Ticket, Trash2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Outlet, Transaction } from '../../types';
+import { useAppStore } from '../../store';
 
 export default function Reports() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -17,6 +18,19 @@ export default function Reports() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const PAGE_SIZE = 10;
+  const { transactionCount, setTransactionCount, loyaltyCount, setLoyaltyCount } = useAppStore();
+
+  const fetchQuotas = async () => {
+    try {
+      const { data: quotaData } = await supabase.rpc('get_current_quotas');
+      if (quotaData) {
+        setTransactionCount(quotaData.regular || 0);
+        setLoyaltyCount(quotaData.loyalty || 0);
+      }
+    } catch (e) {
+      console.error('Error fetching quotas:', e);
+    }
+  };
 
   useEffect(() => {
     fetchInitialData();
@@ -26,11 +40,27 @@ export default function Reports() {
     setCurrentPage(1);
   }, [selectedOutletId, selectedCategory, searchQuery]);
 
+  useEffect(() => {
+    // Listen for new transactions to update quotas in real-time
+    const channel = supabase
+      .channel('public:transactions:reports')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
+        fetchQuotas();
+        fetchTransactions();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const fetchInitialData = async () => {
     setLoading(true);
     try {
       const { data: outletsData } = await supabase.from('outlets').select('*').order('nama_outlet');
       setOutlets(outletsData || []);
+      await fetchQuotas();
       await fetchTransactions();
     } catch (error) {
       console.error('Error fetching initial data:', error);
@@ -266,7 +296,11 @@ export default function Reports() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Transaksi</p>
-          <p className="text-2xl font-black text-gray-900">{filteredTransactions.length}</p>
+          <p className="text-2xl font-black text-gray-900">
+            {selectedOutletId === 'all' && selectedCategory === 'all' && searchQuery === '' 
+              ? (transactionCount + loyaltyCount) 
+              : filteredTransactions.length}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Penjualan</p>
@@ -276,11 +310,19 @@ export default function Reports() {
         </div>
         <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 border-l-4 border-l-blue-500 text-blue-900">
           <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Transaksi Promo</p>
-          <p className="text-2xl font-black">{filteredTransactions.filter(t => t.promo_type === 'loyalty_7mei').length}</p>
+          <p className="text-2xl font-black">
+            {selectedOutletId === 'all' && selectedCategory === 'all' && searchQuery === '' 
+              ? loyaltyCount 
+              : filteredTransactions.filter(t => t.promo_type === 'loyalty_7mei').length}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 border-l-4 border-l-orange-500 text-orange-900">
           <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-1">Transaksi Reguler</p>
-          <p className="text-2xl font-black">{filteredTransactions.filter(t => t.promo_type !== 'loyalty_7mei').length}</p>
+          <p className="text-2xl font-black">
+            {selectedOutletId === 'all' && selectedCategory === 'all' && searchQuery === '' 
+              ? transactionCount 
+              : filteredTransactions.filter(t => t.promo_type !== 'loyalty_7mei').length}
+          </p>
         </div>
       </div>
 
