@@ -40,6 +40,11 @@ export default function Dashboard() {
     const channel = supabase
       .channel('public:transactions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
+        // Sinkronisasi angka kuota secara instan (paling realtime)
+        fetchQuotas();
+        
+        // Refresh data dashboard lainnya bisa sedikit delay/manual jika ingin lebih hemat,
+        // tapi untuk sekarang kita tetap panggil fetchData agar grafik terupdate.
         fetchData();
       })
       .subscribe();
@@ -48,6 +53,18 @@ export default function Dashboard() {
       supabase.removeChannel(channel);
     };
   }, [viewMode, selectedOutletId]);
+
+  const fetchQuotas = async () => {
+    try {
+      const { data: quotaData } = await supabase.rpc('get_current_quotas');
+      if (quotaData) {
+        setTransactionCount(quotaData.regular || 0);
+        setLoyaltyCount(quotaData.loyalty || 0);
+      }
+    } catch (e) {
+      console.error('Error fetching quotas:', e);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -77,12 +94,7 @@ export default function Dashboard() {
       setDemoProducts(productsData || []);
       setDemoOutlets(outletsData || []);
 
-      // Sinkronisasi kuota
-      const { data: quotaData } = await supabase.rpc('get_current_quotas');
-      if (quotaData) {
-        setTransactionCount(quotaData.regular || 0);
-        setLoyaltyCount(quotaData.loyalty || 0);
-      }
+      await fetchQuotas();
     } catch (error: any) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Gagal memuat data dashboard');
@@ -217,7 +229,7 @@ export default function Dashboard() {
 
       return {
         totalSales: localStats.total_sales || 0,
-        totalTransactions: localStats.total_transactions || 0,
+        totalTransactions: transactionCount + loyaltyCount,
         regularTransactions: transactionCount,
         loyaltyTransactions: loyaltyCount,
         genderData,

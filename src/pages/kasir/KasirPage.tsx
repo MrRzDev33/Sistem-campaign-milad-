@@ -51,8 +51,14 @@ export default function KasirPage() {
     // Listen for new transactions from other cashiers to update limits in real-time
     const channel = supabase
       .channel('public:transactions:kasir')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
-        fetchTransactions();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, (payload) => {
+        // Optimization: Only fetch full transactions if it's our own change
+        if (payload.new && (payload.new as any).user_id === user?.id) {
+          fetchTransactions();
+        } else {
+          // Otherwise just fetch updated quotas (much lighter)
+          fetchQuotas();
+        }
       })
       .subscribe();
 
@@ -78,6 +84,18 @@ export default function KasirPage() {
     }
   }, [transactionCount]);
 
+  const fetchQuotas = async () => {
+    try {
+      const { data: quotaData, error: quotaError } = await supabase.rpc('get_current_quotas');
+      if (!quotaError && quotaData) {
+        useAppStore.getState().setTransactionCount(quotaData.regular || 0);
+        useAppStore.getState().setLoyaltyCount(quotaData.loyalty || 0);
+      }
+    } catch (e) {
+      console.error('Error fetching quotas:', e);
+    }
+  };
+
   const fetchTransactions = async () => {
     if (!user?.id) return;
     try {
@@ -91,13 +109,7 @@ export default function KasirPage() {
       if (error) throw error;
       setTransactions(data || []);
       
-      // Fetch global counts for limit protection
-      const { data: quotaData, error: quotaError } = await supabase.rpc('get_current_quotas');
-      
-      if (!quotaError && quotaData) {
-        useAppStore.getState().setTransactionCount(quotaData.regular || 0);
-        useAppStore.getState().setLoyaltyCount(quotaData.loyalty || 0);
-      }
+      await fetchQuotas();
     } catch (e) {
       console.error('Error fetching transactions:', e);
     }
@@ -357,7 +369,7 @@ export default function KasirPage() {
           p_items: items.map(item => ({
             product_id: item.id,
             qty: item.qty,
-            harga: getProductPrice(item.id)
+            harga: item.harga || getProductPrice(item.id)
           }))
         });
 
@@ -378,7 +390,7 @@ export default function KasirPage() {
       toast.success('Transaksi berhasil disimpan');
       
       // Fetch latest data to update history and counts
-      await fetchTransactions();
+      fetchTransactions();
       
       clearCart();
       setReceiptFile(null);
@@ -387,7 +399,6 @@ export default function KasirPage() {
       setCustomerAgeRange('');
       localStorage.removeItem('dmc_last_gender');
       localStorage.removeItem('dmc_last_age');
-      fetchTransactions();
     } catch (error: any) {
       console.error('Error saving transaction:', error);
       let message = error.message || 'Gagal menyimpan transaksi';
@@ -423,7 +434,15 @@ export default function KasirPage() {
 
   const handleConfirmAdd = () => {
     if (selectedProductForQty) {
-      addItem(selectedProductForQty, getProductPrice(selectedProductForQty.id), qtyToAdd);
+      const price = getProductPrice(selectedProductForQty.id);
+      
+      // Keamanan: Jangan izinkan item reguler masuk keranjang dengan harga 0
+      if (price <= 0 && !selectedProductForQty.is_loyalty) {
+        toast.error(`Gagal mendapatkan harga untuk ${selectedProductForQty.nama}. Mohon refresh halaman atau hubungi Admin.`);
+        return;
+      }
+      
+      addItem(selectedProductForQty, price, qtyToAdd);
       setSelectedProductForQty(null);
       toast.success(`${selectedProductForQty.nama} ditambahkan ke keranjang`);
     }
