@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [localStats, setLocalStats] = useState<any>(null);
 
   const [viewMode, setViewMode] = useState<'global' | 'outlet'>('global');
   const [selectedOutletId, setSelectedOutletId] = useState<string>('');
@@ -181,7 +182,6 @@ export default function Dashboard() {
     }
   };
 
-  const [localStats, setLocalStats] = useState<any>(null);
 
   const stats = useMemo(() => {
     // Default empty state
@@ -194,7 +194,8 @@ export default function Dashboard() {
       ageData: [],
       topProducts: [],
       topOutlets: [],
-      allOutletData: []
+      allOutletData: [],
+      chartData: []
     };
 
     if (!localStats) return emptyStats;
