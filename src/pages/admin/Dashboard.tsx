@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
-import { TrendingUp, Users, Store, ShoppingBag, Trophy, Globe, Ticket, Trash2 } from 'lucide-react';
+import { TrendingUp, Users, Store, ShoppingBag, Trophy, Globe, Ticket, Trash2, Search } from 'lucide-react';
 import { Transaction, Product, Outlet } from '../../types';
 
 import { useDemoStore, useAppStore } from '../../store';
