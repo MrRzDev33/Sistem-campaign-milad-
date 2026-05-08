@@ -44,7 +44,7 @@ BEGIN
   SELECT jsonb_agg(d)
   INTO v_top_outlets
   FROM (
-    SELECT o.nama_outlet as name, SUM(t.total) as total
+    SELECT o.nama_outlet as name, COUNT(t.id) as total
     FROM public.transactions t
     JOIN public.outlets o ON o.id = t.outlet_id
     WHERE (p_outlet_id IS NULL OR t.outlet_id = p_outlet_id)
@@ -57,7 +57,7 @@ BEGIN
   SELECT jsonb_agg(d)
   INTO v_all_outlets
   FROM (
-    SELECT o.nama_outlet as name, SUM(t.total) as total
+    SELECT o.nama_outlet as name, COUNT(t.id) as total
     FROM public.transactions t
     JOIN public.outlets o ON o.id = t.outlet_id
     WHERE (p_outlet_id IS NULL OR t.outlet_id = p_outlet_id)

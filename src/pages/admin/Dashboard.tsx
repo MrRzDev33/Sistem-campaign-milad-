@@ -344,19 +344,19 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Sales Chart */}
         <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100 min-w-0">
-          <h3 className="text-xl font-bold mb-6">Grafik Penjualan</h3>
-          <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-4">Total Penjualan per Wilayah/Outlet</p>
+          <h3 className="text-xl font-bold mb-6">Grafik Klaim Voucher</h3>
+          <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-4">Total Voucher yang diklaim per Wilayah/Outlet</p>
           <div className="h-[350px] w-full relative overflow-hidden">
             <div className="absolute inset-0 min-h-[350px]">
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} key={`chart-main-${loading}`}>
                 <BarChart data={stats.chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 10 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 10 }} tickFormatter={(val) => `Rp ${val / 1000}k`} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 10 }} />
                   <Tooltip
                     cursor={{ fill: '#fff7ed' }}
                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                    formatter={(val: number) => [formatRupiah(val), 'Penjualan']}
+                    formatter={(val: number) => [val.toLocaleString(), 'Voucher']}
                   />
                   <Bar dataKey="total" radius={[8, 8, 0, 0]}>
                     {stats.chartData.map((entry, index) => (
@@ -458,8 +458,8 @@ export default function Dashboard() {
               <Trophy className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-xl font-bold">Top 10 Outlet Penjualan Tertinggi</h3>
-              <p className="text-sm text-gray-500">Outlet dengan performa penjualan terbaik di seluruh Indonesia.</p>
+              <h3 className="text-xl font-bold">Top 10 Outlet Klaim Voucher Terbanyak</h3>
+              <p className="text-sm text-gray-500">Outlet dengan jumlah klaim voucher terbanyak di seluruh Indonesia.</p>
             </div>
           </div>
 
@@ -480,7 +480,7 @@ export default function Dashboard() {
                   <Tooltip
                     cursor={{ fill: '#f0f9ff' }}
                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                    formatter={(val: number) => [formatRupiah(val), 'Total Penjualan']}
+                    formatter={(val: number) => [val.toLocaleString(), 'Total Voucher']}
                   />
                   <Bar dataKey="total" radius={[0, 8, 8, 0]} barSize={24}>
                     {stats.topOutlets.map((entry, index) => (
@@ -527,7 +527,7 @@ export default function Dashboard() {
                 <tr className="bg-gray-50/50 border-b border-gray-100">
                   <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest w-20">Rank</th>
                   <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nama Outlet</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Total Penjualan</th>
+                  <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Voucher Diklaim</th>
                   <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Persentase</th>
                 </tr>
               </thead>
@@ -538,7 +538,7 @@ export default function Dashboard() {
                   .filter(o => o.name.toLowerCase().includes(rankingSearch.toLowerCase()))
                   .slice((rankingPage - 1) * RANKING_PAGE_SIZE, rankingPage * RANKING_PAGE_SIZE)
                   .map((outlet, index) => {
-                    const percentage = (outlet.total / stats.totalSales) * 100;
+                    const percentage = (outlet.total / stats.totalTransactions) * 100;
                     
                     return (
                       <tr key={index} className="hover:bg-gray-50/50 transition-colors">
@@ -551,7 +551,7 @@ export default function Dashboard() {
                           <span className="font-bold text-gray-900">{outlet.name}</span>
                         </td>
                         <td className="px-8 py-5 text-right font-black text-gray-900">
-                          {formatRupiah(outlet.total)}
+                          {outlet.total.toLocaleString()}
                         </td>
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-3 justify-center">
